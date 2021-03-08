@@ -1,14 +1,19 @@
 package com.shop.mypetshop.rest;
 
-import java.util.List;
-
+import com.shop.mypetshop.domain.Pet;
+import com.shop.mypetshop.repo.PetRepository;
+import com.shop.mypetshop.rest.dto.PetDto;
+import com.shop.mypetshop.rest.dto.PetDtoConverter;
+import com.shop.mypetshop.rest.dto.PetInsertDto;
+import com.shop.mypetshop.usecase.PetInsertUseCase;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.shop.mypetshop.domain.Pet;
-import com.shop.mypetshop.repo.PetRepository;
+import java.util.stream.Stream;
 
 
 /**
@@ -21,14 +26,29 @@ public class Pets
 {
     private final PetRepository repo;
 
-    public Pets(final PetRepository repo)
+    private final PetInsertUseCase petInsertUseCase;
+
+    public Pets(final PetRepository repo, PetInsertUseCase petInsertUseCase)
     {
         this.repo = repo;
+        this.petInsertUseCase = petInsertUseCase;
     }
 
     @GetMapping
-    public List<Pet> getAll()
+    public Stream<PetDto> getAll()
     {
-        return repo.findAll();
+        return repo.findAll().stream()
+                .map(PetDtoConverter::toPetDto);
+    }
+
+    @PostMapping
+    public PetDto insert(@RequestBody PetInsertDto pet) {
+
+        PetInsertUseCase.Response response = petInsertUseCase.insertPet(new PetInsertUseCase.Request(
+                pet.getName(),
+                pet.getBreedId()
+        ));
+
+        return PetDtoConverter.toPetDto(response.getPet());
     }
 }
